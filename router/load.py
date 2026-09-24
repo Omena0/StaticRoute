@@ -5,7 +5,7 @@ import json5
 from flask import request
 
 from .error import Error, error
-from .route import Route, data_stores
+from .route import Route, data_stores, data_store_paths, save_data_store
 from .util import MISSING
 
 
@@ -56,11 +56,12 @@ def load_data_store(app, stores_dir, store_name, store_config):
         with open(path, 'w') as f:
             f.write('[]')
 
-    store_name = store_name.rsplit('.',1)[0]
+    base_name = store_name.rsplit('.',1)[0]
+    data_store_paths[base_name] = path
 
     # Load data store
     with open(path) as f:
-        data_stores[store_name] = json5.load(f)
+        data_stores[base_name] = json5.load(f)
 
     # Define routes
     for route_name, route_config in store_config.get('routes', {}).items():
@@ -68,8 +69,9 @@ def load_data_store(app, stores_dir, store_name, store_config):
             return err
 
         route_config['idx_name'] = store_config.get('idx_name','')
-        print(f'  Loading route: /{store_name}/{route_name}')
-        load_route(app, store_name, route_name, store_config, route_config)
+        print(f'  Loading route: /{base_name}/{route_name}')
+        load_route(app, base_name, route_name, store_config, route_config)
+
 
 def load_route(app, store_name, route_name, store_config, route_config):
     route = Route(store_name, route_config, store_config.get('idx_name',''))

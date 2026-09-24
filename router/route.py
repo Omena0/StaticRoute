@@ -1,4 +1,5 @@
 import time
+import json5
 from itertools import islice
 from typing import Any
 
@@ -8,6 +9,15 @@ from .error import Error, error, is_error
 from .util import MISSING
 
 data_stores:dict[str, dict] = {}
+data_store_paths: dict[str, str] = {}
+
+def save_data_store(store_name):
+    path = data_store_paths.get(store_name)
+    if path is None:
+        return error(f"DataStoreError: Cannot save '{store_name}', path not found.")
+    with open(path, 'w') as f:
+        json5.dump(data_stores[store_name], f, indent=2)
+    return None
 
 class Route:
     def __init__(self, store_name, config, idx_name=''):
@@ -210,6 +220,9 @@ class Route:
 
             self.data_store[str(new['id'])] = new
 
+            if err := save_data_store(self.store_name):
+                return err
+
             return new
 
         # Deletes row
@@ -227,6 +240,9 @@ class Route:
                 return err
 
             self.data_store.pop(str(id))
+
+            if err := save_data_store(self.store_name):
+                return err
 
             return {"result": "ok"}
 
