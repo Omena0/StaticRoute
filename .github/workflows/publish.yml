@@ -57,8 +57,8 @@ jobs:
         run: |
           CURRENT_VER=$(grep '^version = ' pyproject.toml | head -1 | sed 's/version = "//;s/"//')
           echo "semver=$CURRENT_VER" >> "$GITHUB_OUTPUT"
-          echo "original_version=$CURRENT_VER (manual build #${GITHUB_RUN_NUMBER})" >> "$GITHUB_OUTPUT"
-          echo "release_msg=Manual publish $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> "$GITHUB_OUTPUT"
+          echo "original_version=$CURRENT_VER-manual-${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+          echo "release_msg=Manual publish (build #${GITHUB_RUN_NUMBER})" >> "$GITHUB_OUTPUT"
 
       - name: Set version from commit (push only)
         if: github.event_name != 'workflow_dispatch' && steps.version_push.outputs.skip != 'true'
