@@ -1,0 +1,90 @@
+{
+    "posts.json": { // Use JSONL since this is a table
+        "type": "table", // Default, works like a database table. Maybe add more types later?
+        "idx_name": "$post", // What to call a single row. Default is "" (empty), use like "$.title"
+
+        "columns": { // Name: Type column definitions
+            "id": "ID", // ID type guarantees uniqueness and is automatically main key.
+            "title": "content", // Content is just 'string' but removes unprintable characters
+            "content": "content",
+            "author": "Identity", // Identity type is basically just a string username that links to a person
+            "created_at": "Timestamp" // Seconds since epoch timestamp (float)
+        },
+
+        "routes": {
+            "list": {
+                "type": "range", // Grabs rows i through j by index (not ID)
+                "args": { // No need to validate since range does it automatically.
+                    "$offset": {
+                        "type": "integer",
+                        "optional": 0
+                    },
+                    "$count": {
+                        "type": "integer",
+                        "optional": 50
+                    }
+                },
+                "range": ["$offset", "$count"],
+                "max": 50,
+                "max_error": "You can only request up to 50 posts.",
+                "select": "*" // Default
+            },
+            "get": {
+                "type": "get",
+                "args": {
+                    "$id": {
+                        "type": "ID" // ID type auto-validates
+                    }
+                },
+                "id": "$id" // Picks just one row directly without looping (indexed)
+            },
+            "new": {
+                "type": "create",
+                "require_auth": true,
+                "auth_error": "You are not logged in.",
+                "args": {
+                    "title": {
+                        "type": "content",
+                        "validator": {
+                            "type": "length",
+                            "max_value": 30,
+                            "error": "Post title too long!"
+                        }
+                    },
+                    "content": {
+                        "type": "content",
+                        "validator": {
+                            "type": "length",
+                            "max_value": 250,
+                            "error": "Post content too long!"
+                        }
+                    }
+                },
+                "values": {
+                    "id": "#new_id",
+                    "title": "$title",
+                    "content": "$content",
+                    "author": "#Identity",
+                    "created_at": "#now"
+                }
+            },
+            "delete": {
+                "type": "delete",
+                "require_auth": true,
+                "auth_error": "You are not logged in.",
+                "args": {
+                    "$id": {
+                        "type": "ID" // ID type auto-validates
+                    }
+                },
+                "require": { // Predicate
+                    "type": "Identity", // Require #Indentity to match post author
+                    "value": "$post.author",
+                    "error": "Cannot delete someone else's post!"
+                },
+                "id": "$id",
+                "error": "Post not found."
+            }
+        }
+    }
+}
