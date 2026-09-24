@@ -49,7 +49,7 @@ jobs:
         id: version_manual
         run: |
           echo "skip=false" >> "$GITHUB_OUTPUT"
-          python scripts/bump_version.py pyproject.toml
+          python scripts/bump_version.py pyproject.toml staticroute
 
       - name: Get current version (manual only)
         if: github.event_name == 'workflow_dispatch'
