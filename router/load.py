@@ -13,10 +13,41 @@ def load_routes_json(file='routes.json'):
     with open(file) as f:
         return json5.load(f)
 
-def load_data_stores(app, stores_dir, routes):
+
+def _validate_name(name, kind):
+    """Validate that a name is safe for use in paths or URLs."""
+    if not isinstance(name, str) or not name:
+        return error(f"InvalidRoute: {kind} must be a non-empty string.")
+    if any(c in name for c in ('/', '\\', '\0', '..')):
+        return error(f"InvalidRoute: {kind} contains invalid characters.")
+    return None
+
+
+def load_data_stores(app, stores_dir, routes, max_datastores=20, max_routes=100):
+    if not isinstance(routes, dict):
+        return error("InvalidRoute: routes must be a dict.")
+
+    if len(routes) > max_datastores:
+        return error(f"InvalidRoute: Too many data stores. Maximum is {max_datastores}.")
+
     for store_name, store_config in routes.items():
         print(f'Loading: {store_name}')
-        load_data_store(app, stores_dir, store_name, store_config)
+        if err := _validate_name(store_name, 'store name'):
+            return err
+
+        if not isinstance(store_config, dict):
+            return error(f"InvalidRoute: Store config for '{store_name}' must be a dict.")
+
+        store_routes = store_config.get('routes', {})
+        if not isinstance(store_routes, dict):
+            return error(f"InvalidRoute: routes for '{store_name}' must be a dict.")
+
+        if len(store_routes) > max_routes:
+            return error(f"InvalidRoute: Too many routes in '{store_name}'. Maximum is {max_routes}.")
+
+        if err := load_data_store(app, stores_dir, store_name, store_config):
+            return err
+
 
 def load_data_store(app, stores_dir, store_name, store_config):
     path = os.path.join(stores_dir, store_name)
@@ -32,7 +63,10 @@ def load_data_store(app, stores_dir, store_name, store_config):
         data_stores[store_name] = json5.load(f)
 
     # Define routes
-    for route_name, route_config in store_config.get('routes', []).items():
+    for route_name, route_config in store_config.get('routes', {}).items():
+        if err := _validate_name(route_name, 'route name'):
+            return err
+
         route_config['idx_name'] = store_config.get('idx_name','')
         print(f'  Loading route: /{store_name}/{route_name}')
         load_route(app, store_name, route_name, store_config, route_config)
