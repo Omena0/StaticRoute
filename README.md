@@ -10,28 +10,26 @@ pip install staticroute
 
 ## Usage
 
-1. Define routes in `routes.json`
-2. Place data stores in `data_stores/` directory
-3. Run the server: `python -m router`
+Literally just call `load_data_stores` with the routes.
 
-## Publishing
+You can get routes from `load_routes_json` which by default reads `routes.json`.
 
-Push events trigger auto-publish when a commit message starts with a version
-(e.g., `3A - Bug fixes`). The version format is `MAJOR + LETTER`, converted to
-SemVer (e.g., `3A` → `3.1.0`).
+```py
+import flask
 
-Manual publishing via the "Publish" workflow button will bump the patch version
-automatically, allowing multiple manual builds.
+from .load import load_data_stores, load_routes_json
 
-## Development
+# Load routes
+routes = load_routes_json()
 
-Format and lint:
-```bash
-ruff format .
-ruff check .
-```
+data_stores_dir = "data_stores"
+os.makedirs(data_stores_dir, exist_ok=True)
 
-Run tests:
-```bash
-pytest
+# Define app
+app = flask.Flask(__name__)
+app.secret_key = "1234" # Need a key for auth
+
+load_data_stores(app, data_stores_dir, routes)
+
+app.run(debug=True)
 ```
