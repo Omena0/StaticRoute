@@ -31,7 +31,7 @@ os.makedirs(data_stores_dir, exist_ok=True)
 
 # Define app
 app = flask.Flask(__name__)
-app.secret_key = "1234" # Need a key for auth
+app.secret_key = "1234"  # Need a key for auth
 
 load_data_stores(app, data_stores_dir, routes)
 
