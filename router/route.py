@@ -2,7 +2,7 @@ import time
 from itertools import islice
 from typing import Any
 
-from flask import session
+from flask import session, abort, jsonify
 
 from .error import Error, error, is_error
 from .util import MISSING
@@ -16,7 +16,11 @@ class Route:
         self.idx_name = idx_name.removeprefix('$')
 
     @property
-    def data_store(self):
+    def data_store(self) -> dict[Any, Any]:
+        if self.store_name not in data_stores:
+            # Cant return a Error due to this being a @property
+            abort(jsonify(error(f"DataStoreNotFound: Store '{self.store_name}' not loaded.")))
+
         return data_stores[self.store_name]
 
     def validate_type(self, type, value) -> tuple[bool, str]:
@@ -39,6 +43,9 @@ class Route:
     def resolve_type(self, value) -> Any | Error:
         if not isinstance(value, dict) or 'type' not in value:
             return value
+
+        if 'value' not in value:
+            return error(f"InvalidRoute: Type dict missing 'value' key.")
 
         type = value['type']
         value = value['value']
@@ -69,9 +76,10 @@ class Route:
         if name == 'now':
             return time.time()
         elif name == 'new_id':
-            if not self.data_store:
-                return 0
-            return int(next(reversed(self.data_store))) + 1
+            last_key = next(reversed(self.data_store))
+            if not str(last_key).isdigit():
+                return error(f"DataStoreError: Last key '{last_key}' is not numeric.")
+            return int(last_key) + 1
         elif name == 'Identity':
             return session.get('username')
         elif name.startswith('session:'):
@@ -80,6 +88,9 @@ class Route:
         return error(f"NotImplemented: Builtin '{name}'")
 
     def resolve_value(self, args: dict, value: Any) -> Any | Error:
+        if not isinstance(value, str):
+            return error(f"InvalidRoute: Value must be a string, got {type(value).__name__}.")
+
         if value.startswith('$'):
             value = value.removeprefix('$')
 
@@ -111,6 +122,9 @@ class Route:
         return value
 
     def resolve_predicate(self, args, predicate) -> bool | Error:
+        if not isinstance(predicate, dict):
+            return error(f"InvalidRoute: Predicate must be a dict.")
+
         type = predicate.get('type', MISSING)
         if type is MISSING:
             return error("InvalidPredicate: Type not specified.")
@@ -131,6 +145,8 @@ class Route:
     def check_require(self, args):
         if 'require' in self.config:
             require = self.config['require']
+            if not isinstance(require, dict):
+                return error(f"InvalidRoute: 'require' must be a dict, got {type(require).__name__}.")
             allowed = self.resolve_predicate(args, require)
             if is_error(allowed):
                 return allowed
