@@ -1,0 +1,47 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "StaticRoute"
+version = "0.1.0"
+description = "User-configured route creation to interact with json5 data stores."
+readme = "README.md"
+requires-python = ">=3.14"
+license = "PolyForm-NonCommercial-1.0.0"
+license-files = ["LICENSE.md"]
+authors = [
+    { name = "Omena0", email = "omena0mc@gmail.com" },
+]
+keywords = ["route", "flask", "json5", "data-store", "router"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Framework :: Flask",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+]
+dependencies = [
+    "flask>=3.1",
+    "json5>=0.9",
+]
+
+[project.urls]
+Homepage = "https://github.com/Omena0/StaticRoute"
+Repository = "https://github.com/Omena0/StaticRoute"
+
+[tool.hatch.build.targets.wheel]
+packages = ["router"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

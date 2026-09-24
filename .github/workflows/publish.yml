@@ -1,0 +1,104 @@
+name: Publish
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+
+      - name: Cache pip downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('pyproject.toml') }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+
+      - name: Extract version from commit message (push only)
+        if: github.event_name != 'workflow_dispatch'
+        id: version_push
+        run: |
+          python scripts/extract_version.py "$GITHUB_OUTPUT"
+          if [ ! -s "$GITHUB_OUTPUT" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Bump version for manual publish (manual only)
+        if: github.event_name == 'workflow_dispatch'
+        id: version_manual
+        run: |
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+          python scripts/bump_version.py pyproject.toml
+
+      - name: Get current version (manual only)
+        if: github.event_name == 'workflow_dispatch'
+        id: version_info
+        run: |
+          CURRENT_VER=$(grep '^version = ' pyproject.toml | head -1 | sed 's/version = "//;s/"//')
+          echo "semver=$CURRENT_VER" >> "$GITHUB_OUTPUT"
+          echo "original_version=$CURRENT_VER (manual build #$GITHUB_RUN_NUMBER)" >> "$GITHUB_OUTPUT"
+          echo "release_msg=Manual publish $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> "$GITHUB_OUTPUT"
+
+      - name: Set version from commit (push only)
+        if: github.event_name != 'workflow_dispatch' && steps.version_push.outputs.skip != 'true'
+        run: |
+          sed -i "s/^version = \".*\"/version = \"${{ steps.version_push.outputs.semver }}\"/" pyproject.toml
+          grep "^version" pyproject.toml
+
+      - name: Build package
+        if: (steps.version_push.outputs.skip != 'true' && github.event_name != 'workflow_dispatch') || (github.event_name == 'workflow_dispatch')
+        run: |
+          python -m build
+
+      - name: Publish to PyPI
+        if: (steps.version_push.outputs.skip != 'true' && github.event_name != 'workflow_dispatch') || (github.event_name == 'workflow_dispatch')
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          twine upload dist/*
+
+      - name: Create GitHub Release
+        if: (steps.version_push.outputs.skip != 'true' && github.event_name != 'workflow_dispatch') || (github.event_name == 'workflow_dispatch')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "v${{ steps.version_push.outputs.original_version }}"
+          name: "v${{ steps.version_push.outputs.original_version }}"
+          body: ${{ steps.version_push.outputs.release_msg }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release (manual)
+        if: github.event_name == 'workflow_dispatch'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "v${{ steps.version_info.outputs.original_version }}"
+          name: "v${{ steps.version_info.outputs.original_version }}"
+          body: ${{ steps.version_info.outputs.release_msg }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cleanup
+        if: (steps.version_push.outputs.skip != 'true' && github.event_name != 'workflow_dispatch') || (github.event_name == 'workflow_dispatch')
+        run: |
+          rm -rf dist/ build/ *.egg-info/
