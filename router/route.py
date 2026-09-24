@@ -100,8 +100,6 @@ class Route:
                 if part not in value:
                     return error(f'KeyError: {part}')
 
-                print(value, part)
-
                 value = value[part]
 
             return self.resolve_type(value)
