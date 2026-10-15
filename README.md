@@ -3,6 +3,7 @@
 [![Lint](https://github.com/Omena0/StaticRoute/actions/workflows/lint.yml/badge.svg)](https://github.com/Omena0/StaticRoute/actions/workflows/lint.yml)
 [![Tests](https://github.com/Omena0/StaticRoute/actions/workflows/tests.yml/badge.svg)](https://github.com/Omena0/StaticRoute/actions/workflows/tests.yml)
 [![Publish](https://github.com/Omena0/StaticRoute/actions/workflows/publish.yml/badge.svg)](https://github.com/Omena0/StaticRoute/actions/workflows/publish.yml)
+[![Docs](https://github.com/Omena0/StaticRoute/actions/workflows/pages.yml/badge.svg)](https://github.com/Omena0/StaticRoute/actions/workflows/pages.yml)
 
 User-configured route creation to interact with json5 data stores.
 
