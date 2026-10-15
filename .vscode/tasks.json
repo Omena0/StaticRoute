@@ -1,0 +1,55 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "pytest: watch",
+            "type": "shell",
+            "command": "ptw",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "pytest: run",
+            "type": "shell",
+            "command": "python -m pytest -v",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "lint",
+            "type": "shell",
+            "command": "ruff check . && ruff format --check .",
+            "problemMatcher": "$ruff"
+        },
+        {
+            "label": "docs: build",
+            "type": "shell",
+            "command": "python -m fr_docs build",
+            "options": {
+                "cwd": "${workspaceFolder}/docs"
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        }
+    ]
+}

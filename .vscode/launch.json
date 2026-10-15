@@ -1,0 +1,12 @@
+{
+    "version": "2.0.0",
+    "configurations": [
+        {
+            "name": "StaticRoute: Debug",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "router",
+            "justMyCode": true
+        }
+    ]
+}
