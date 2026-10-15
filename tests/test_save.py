@@ -1,8 +1,7 @@
 import os
-import tempfile
 
 from router.error import is_error
-from router.route import Route, data_store_paths, data_stores, save_data_store
+from router.route import data_store_paths, data_stores, save_data_store
 
 
 class TestSaveDataStore:

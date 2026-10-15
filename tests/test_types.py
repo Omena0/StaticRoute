@@ -1,4 +1,3 @@
-from router.error import is_error
 from router.route import Route
 
 
